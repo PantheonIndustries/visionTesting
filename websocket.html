@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Video Stream</title>
+</head>
+<body>
+    <h2>Live Web Browser Stream</h2>
+    <img id="videoDisplay" src="" style="height:80vh" alt="Waiting for stream :)"/>
+
+    <script>
+        const img = document.getElementById('videoDisplay');
+        const ws = new WebSocket('ws://localhost:8765');
+        
+        ws.binaryType = 'blob'; // Ensure data is treated as raw binary
+        
+        ws.onmessage = function(event) {
+            // Create a temporary local URL pointing to the received JPEG blob
+            const blobURL = URL.createObjectURL(event.data);
+            
+            // Free memory from the previous frame to prevent leaks
+            const oldURL = img.src;
+            img.src = blobURL;
+            if (oldURL.startsWith('blob:')) {
+                URL.revokeObjectURL(oldURL);
+            }
+        };
+
+        ws.onclose = () => console.log('Disconnected from stream server.');
+    </script>
+</body>
+</html>
