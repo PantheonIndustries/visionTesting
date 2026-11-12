@@ -8,7 +8,10 @@ async def video(websocket):
     print(f"Client connected {websocket.remote_address} :)")
 
     cap = cv.VideoCapture(0)
-    yunet = cv.FaceDetectorYN.create("face_detection_yunet_2026may.onnx", "", (0, 0))
+
+    dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_APRILTAG_36h11)
+    params = cv.aruco.DetectorParameters()
+    detector = cv.aruco.ArucoDetector(dictionary, params)
 
     if not cap.isOpened():
         print("the camera can't be opened :(")
@@ -21,31 +24,16 @@ async def video(websocket):
                 print("Frame not readable :(")
                 break
 
-            height, width, _ = frame.shape
-            yunet.setInputSize((width, height))
+            # put processing code here :)
 
-            retval, faces = yunet.detect(frame)
-
-            if faces is not None:
-                for face in faces:
-                    bbox = face[0:4].astype(np.int32)
-                    top_left = (bbox[0], bbox[1])
-                    bottom_right = (bbox[0] + bbox[2], bbox[1] + bbox[3])
-                    cv.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
-
-                    cv.putText(
-                        frame,
-                        str(face[14]),
-                        top_left,
-                        cv.FONT_HERSHEY_COMPLEX,
-                        1,
-                        (0, 255, 0),
-                        2,
-                    )
-
-                    landmarks = face[4:14].astype(np.int32).reshape((5, 2))
-                    for idx, landmark in enumerate(landmarks):
-                        cv.circle(frame, landmark, 2, (255, 0, 0), 2)
+            gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            corners, ids, _ = detector.detectMarkers(gray)
+            
+            if ids is not None:
+                cv.aruco.drawDetectedMarkers(frame, corners, ids)
+                for tag_corners, tag_id in zip(corners, ids.flatten()):
+                    cx, cy = tag_corners[0].mean(axis=0).astype(int)
+                    print(f"Tag {tag_id} at ({cx}, {cy})")
 
             success, encoded_image = cv.imencode(".jpg", frame)
             if not success:
