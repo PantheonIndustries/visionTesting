@@ -50,7 +50,7 @@ async def video(websocket):
 
 
 async def main():
-    async with websockets.serve(video, "localhost", 8765):
+    async with websockets.serve(video, "0.0.0.0", 8765):
         print("WebSocket Video Server started on ws://localhost:8765")
         await asyncio.Future()  # Keeps the server running indefinitely
 
